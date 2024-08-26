@@ -48,17 +48,36 @@ class TopologyMap:
         global_cost_grid = np.zeros_like(self.bool_grid, dtype = 'int')
         cost_grid = np.zeros_like(self.bool_grid, dtype='int')
         
-        def dfs(node):
-            # If we reach the start node, there is one valid path
-            x, y = node
-            cost_grid[y,x] += 1
-            if node == start:
-                return 1
-            # If the node has no parent, there is no valid path (this case should not happen if the graph is connected)
-            if node not in parents:
-                return 0
-            # Sum up the number of paths by recursively exploring all parents
-            return sum(dfs(p) for p in parents[node])
+        def dfs(goal):
+            stack = [(goal, 0)]
+            path_counts = {goal: 0}  # Dictionary to keep track of path counts to each node
+
+            # Initialize the total paths counter
+            total_paths = 0
+
+            # Iterate while there are nodes to process
+            while stack:
+                node, path_count = stack.pop()
+                x, y = node
+
+                # Increment the visit count for the current node in the cost grid
+                cost_grid[y, x] += 1
+
+                # If we reached the start node, increment the total paths count
+                if node == start:
+                    total_paths += 1
+                    continue
+
+                # If the node has parents, push them onto the stack
+                if node in parents:
+                    for parent in parents[node]:
+                        if parent in path_counts:
+                            path_counts[parent] += 1
+                        else:
+                            path_counts[parent] = 1
+                        stack.append((parent, path_counts[parent]))
+
+            return total_paths
 
         count = 0
         for (x, y) in self.vertices: 
