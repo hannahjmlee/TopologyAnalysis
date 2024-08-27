@@ -1,4 +1,4 @@
-from src.topology import TopologyMap
+from src.betweenness import BetweennessCentrality
 from src.visualize import *
 
 def main():
@@ -19,11 +19,11 @@ def main():
                 'brc202d', 'den520d', 'w_woundedcoast']
     
     map_name = "empty-8-8"
-    top_map = TopologyMap(map_name, False)
-    top_map.ScoreGrid()
-    # print(top_map.scored_grid)
-    # top_map.LoadGrid()
-    DisplayTopology(top_map.bool_grid, top_map.scored_grid, map_name, "fig1.png")
+    bc = BetweennessCentrality(map_name, False)
+    bc.ScoreGrid()
+    bc.NormalizeGrid()
+    # bc.LoadGrid()
+    DisplayTopology(bc.bool_grid, bc.scored_grid, map_name, "fig1.png")
 
 if __name__=="__main__":
     main()

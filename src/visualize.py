@@ -1,7 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import numpy as np
-from PIL import Image
 
 def PreprocessMap(bool_grid):
     obstacles = []
@@ -14,24 +11,6 @@ def PreprocessMap(bool_grid):
 
     return bounds, obstacles
 
-def DisplayEnvironment(grid, map_name, output_name):
-    bounds, obstacles = PreprocessMap(grid)
-    fig, ax = plt.subplots(figsize = (8,8))
-
-    ax.clear()
-    ax.set_aspect('equal')
-    ax.autoscale(False)
-    ax.set_xlim(bounds[0][0] - 0.5, bounds[0][1] - 0.5)
-    ax.set_ylim(bounds[1][0] - 0.5, bounds[1][1] - 0.5)
-    ax.set_xlabel('X Position')
-    ax.set_ylabel('Y Position')
-
-    for obstacle in obstacles:
-        plt.fill_between([obstacle[0] - 0.5, obstacle[0] + 0.5],
-                        obstacle[1] - 0.5, obstacle[1] + 0.5,
-                        color='black')
-    # ax.set_title(map_name)
-    plt.savefig(output_name)
 
 def DisplayTopology(grid, topology, map_name, output_name): 
     bounds, obstacles = PreprocessMap(grid) 
@@ -53,11 +32,6 @@ def DisplayTopology(grid, topology, map_name, output_name):
         plt.fill_between([obstacle[0] - 0.5, obstacle[0] + 0.5],
                         obstacle[1] - 0.5, obstacle[1] + 0.5,
                         color='black')
-
-
-
-
-        plt.figure(figsize=(8, 6))
-
-    ax.set_title(map_name)
+    
+    ax.set_title("Topology of " + map_name)
     plt.savefig(output_name)

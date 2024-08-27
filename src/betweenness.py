@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 
-class TopologyMap:
+class BetweennessCentrality:
     def __init__(self, map_name, debug = True):
         self.bool_grid = self.BuildBooleanGrid(map_name)
         self.scored_grid = np.zeros_like(self.bool_grid)
@@ -16,33 +16,29 @@ class TopologyMap:
 
         self.save_name = os.path.join(os.getcwd(), "scored_benchmarks", map_name + ".npy")
         self.debug = debug 
+        self.completed = set()
 
     def LoadGrid(self): 
-        self.scored_grid = np.load(self.save_name) 
-        self.NormalizeGrid() 
-
-
-    def ScoreGrid(self):
-        for (x, y) in self.vertices: 
-            path_tracker = self.pathfinder.ShortestPathsFromStart((x, y))
-            mini_grid = self.ScoreStartingPoint(path_tracker, (x, y))
-            self.scored_grid = self.scored_grid + mini_grid
-
-        np.save(self.save_name, self.scored_grid)
-        return 
+        self.scored_grid = np.load(self.save_name)
+        self.NormalizeGrid()
     
     def NormalizeGrid(self): 
-        min_val = np.min(self.scored_grid)
-        # min_val = 0
+        min_val = np.min(self.scored_grid[self.scored_grid > 0])
         max_val = np.max(self.scored_grid)
         
         if min_val == max_val: 
             self.scored_grid = np.full(self.scored_grid.shape, min_val) 
             return
-        print(self.scored_grid) 
-        self.scored_grid = (self.scored_grid - min_val) / (max_val - min_val )
-        print(self.scored_grid)  
+        self.scored_grid = (self.scored_grid - min_val) / (max_val - min_val)
 
+    def ScoreGrid(self):
+        for start_vertex in self.vertices: 
+            path_tracker = self.pathfinder.ShortestPathsFromStart(start_vertex)
+            mini_grid = self.ScoreStartingPoint(path_tracker, start_vertex)
+            self.scored_grid = self.scored_grid + mini_grid
+
+        np.save(self.save_name, self.scored_grid)
+        return 
 
     def ScoreStartingPoint(self, parents, start): 
         global_cost_grid = np.zeros_like(self.bool_grid, dtype = 'int')
@@ -79,16 +75,17 @@ class TopologyMap:
 
             return total_paths
 
-        count = 0
         for (x, y) in self.vertices: 
             if (x, y) == start: 
                 continue
             
-            paths = []
             cost_grid = np.zeros_like(self.bool_grid, dtype='int')
             num_paths = dfs((x, y)) 
 
             cost_grid[y, x] = 0
+            cost_grid[start[1], start[0]] = 0
+
+            cost_grid = cost_grid / num_paths
             global_cost_grid = global_cost_grid + cost_grid
 
         global_cost_grid[start[1], start[0]] = 0

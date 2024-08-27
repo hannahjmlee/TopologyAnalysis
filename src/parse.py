@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def GetLines(filename, skip_lines):
     lines = []
     with open (filename, "r") as f:
