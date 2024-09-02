@@ -3,12 +3,13 @@ from src.search import *
 
 import os
 import numpy as np
+from collections import deque, defaultdict
 
 
 class BetweennessCentrality:
     def __init__(self, map_name, debug = True):
         self.bool_grid = self.BuildBooleanGrid(map_name)
-        self.scored_grid = np.zeros_like(self.bool_grid)
+        self.scored_grid = np.zeros_like(self.bool_grid, dtype='float')
         self.pathfinder = Dijkstra(self.bool_grid, debug)
 
         self.n, self.m = self.bool_grid.shape
@@ -17,6 +18,54 @@ class BetweennessCentrality:
         self.save_name = os.path.join(os.getcwd(), "scored_benchmarks", map_name + ".npy")
         self.debug = debug 
         self.completed = set()
+
+    def Brandes(self):
+        betweenness = dict.fromkeys(self.vertices, 0.0)
+        
+        for s in self.vertices:
+            # Single-source shortest-paths problem
+            stack = []
+            pred = {v: [] for v in self.vertices}  # Predecessors
+            sigma = dict.fromkeys(self.vertices, 0)  # Number of shortest paths
+            dist = dict.fromkeys(self.vertices, -1)  # Distance from source
+            
+            sigma[s] = 1
+            dist[s] = 0
+            
+            Q = deque([s])
+            while Q:
+                v = Q.popleft()
+                stack.append(v)
+                for w in self.pathfinder.neighbors[v]:
+                    # Path discovery
+                    if dist[w] < 0:
+                        Q.append(w)
+                        dist[w] = dist[v] + 1
+                    # Path counting
+                    if dist[w] == dist[v] + 1:
+                        sigma[w] += sigma[v]
+                        pred[w].append(v)
+            
+            # Accumulation
+            delta = dict.fromkeys(self.vertices, 0)
+            while stack:
+                w = stack.pop()
+                # Calculate contributions from predecessors
+                total_paths = sum(sigma[v] for v in pred[w])
+                for v in pred[w]:
+                    contribution = (sigma[v] / total_paths) * (1 + delta[w])
+                    delta[v] += contribution
+                if w != s:
+                    betweenness[w] += delta[w]
+        
+        # Store the betweenness scores in self.scored_grid
+        for v in betweenness:
+            x, y = v  # Assuming v is a tuple representing (y, x) coordinates
+            self.scored_grid[y, x] = betweenness[v] / 2.0
+
+        np.save(self.save_name, self.scored_grid)
+        return
+    
 
     def LoadGrid(self): 
         self.scored_grid = np.load(self.save_name)
@@ -30,66 +79,6 @@ class BetweennessCentrality:
             self.scored_grid = np.full(self.scored_grid.shape, min_val) 
             return
         self.scored_grid = (self.scored_grid - min_val) / (max_val - min_val)
-
-    def ScoreGrid(self):
-        for start_vertex in self.vertices: 
-            path_tracker = self.pathfinder.ShortestPathsFromStart(start_vertex)
-            mini_grid = self.ScoreStartingPoint(path_tracker, start_vertex)
-            self.scored_grid = self.scored_grid + mini_grid
-
-        np.save(self.save_name, self.scored_grid)
-        return 
-
-    def ScoreStartingPoint(self, parents, start): 
-        global_cost_grid = np.zeros_like(self.bool_grid, dtype = 'int')
-        cost_grid = np.zeros_like(self.bool_grid, dtype='int')
-        
-        def dfs(goal):
-            stack = [(goal, 0)]
-            path_counts = {goal: 0}  # Dictionary to keep track of path counts to each node
-
-            # Initialize the total paths counter
-            total_paths = 0
-
-            # Iterate while there are nodes to process
-            while stack:
-                node, path_count = stack.pop()
-                x, y = node
-
-                # Increment the visit count for the current node in the cost grid
-                cost_grid[y, x] += 1
-
-                # If we reached the start node, increment the total paths count
-                if node == start:
-                    total_paths += 1
-                    continue
-
-                # If the node has parents, push them onto the stack
-                if node in parents:
-                    for parent in parents[node]:
-                        if parent in path_counts:
-                            path_counts[parent] += 1
-                        else:
-                            path_counts[parent] = 1
-                        stack.append((parent, path_counts[parent]))
-
-            return total_paths
-
-        for (x, y) in self.vertices: 
-            if (x, y) == start: 
-                continue
-            
-            cost_grid = np.zeros_like(self.bool_grid, dtype='int')
-            num_paths = dfs((x, y)) 
-
-            cost_grid[y, x] = 0
-            cost_grid[start[1], start[0]] = 0
-
-            cost_grid = cost_grid / num_paths
-            global_cost_grid = global_cost_grid + cost_grid
-
-        global_cost_grid[start[1], start[0]] = 0
-        return global_cost_grid
 
     def BuildBooleanGrid(self, map_name):
         map_file = map_name + ".map"
