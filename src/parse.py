@@ -1,5 +1,6 @@
 import numpy as np
 
+# Function: gets the lines of environment file
 def GetLines(filename, skip_lines):
     lines = []
     with open (filename, "r") as f:
@@ -13,6 +14,7 @@ def GetLines(filename, skip_lines):
     return lines
 
 
+# Determines boolean values for a given environment file
 def CreateBooleanGrid(lines):
     obst_chars = "T@O" # False
     free_chars = ".G"  # True

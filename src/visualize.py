@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+# Function: helper that finds the positions of all obstacles and the bounds of the map
 def PreprocessMap(bool_grid):
     obstacles = []
     for x in range(bool_grid.shape[1]):
@@ -12,6 +13,7 @@ def PreprocessMap(bool_grid):
     return bounds, obstacles
 
 
+# Function: displays environment with betweenness centrality values overlayed as a heat map
 def DisplayTopology(grid, topology, map_name, output_name): 
     bounds, obstacles = PreprocessMap(grid) 
     fig, ax = plt.subplots(figsize=(8, 8))
